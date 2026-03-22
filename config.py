@@ -20,6 +20,7 @@ APP_ICON = "🏆"
 APP_AUTHOR = "Cláudio Ferreira Neves"
 APP_ROLE  = "Especialista em Business Intelligence, Big Data & Analytics - Ciência de Dados"
 APP_ROLE2 = "Especialista em Ciência de Dados e Inteligência Artificial"
+APP_ROLE3 = "MBA em Gestão de Projetos"
 APP_INSTITUTION = "SENAI/SC - CentroWEG"
 
 # Controle de acesso ao painel do professor

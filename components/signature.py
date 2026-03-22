@@ -1,5 +1,5 @@
 import streamlit as st
-from config import APP_AUTHOR, APP_ROLE, APP_ROLE2, APP_INSTITUTION
+from config import APP_AUTHOR, APP_ROLE, APP_ROLE2, APP_ROLE3, APP_INSTITUTION
 
 
 def render() -> None:
@@ -9,6 +9,7 @@ def render() -> None:
         <span style="color:#00BFFF; font-weight:600; font-size:1em;">🛠️ {APP_AUTHOR}</span><br>
         <span style="color:#888;">{APP_ROLE}</span><br>
         <span style="color:#888;">{APP_ROLE2}</span><br>
+        <span style="color:#888;">{APP_ROLE3}</span><br>
         <span style="color:#555;">{APP_INSTITUTION}</span><br>
         <span style="font-size:0.95em; display:block; margin-top:2px;">
             <span style="color:#50fa7b;">Python</span> &bull;
