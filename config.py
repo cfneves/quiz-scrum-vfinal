@@ -18,7 +18,8 @@ NOTA_APROVACAO = 7.0
 APP_TITLE = "Quiz Scrum"
 APP_ICON = "🏆"
 APP_AUTHOR = "Cláudio Ferreira Neves"
-APP_ROLE = "Especialista em Business Intelligence, Big Data & Analytics • Ciência de Dados • Inteligência Artificial"
+APP_ROLE  = "Especialista em Business Intelligence, Big Data & Analytics - Ciência de Dados"
+APP_ROLE2 = "Especialista em Ciência de Dados e Inteligência Artificial"
 APP_INSTITUTION = "SENAI/SC - CentroWEG"
 
 # Controle de acesso ao painel do professor

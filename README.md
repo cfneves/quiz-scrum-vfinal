@@ -434,7 +434,7 @@ As 20 questões cobrem os principais conceitos do **Scrum Guide**:
 
 **Cláudio Ferreira Neves**
 
-Especialista em Business Intelligence, Big Data & Analytics · Ciência de Dados · Inteligência Artificial
+Especialista em Business Intelligence, Big Data & Analytics - Ciência de Dados<br>Especialista em Ciência de Dados e Inteligência Artificial
 
 [![GitHub](https://img.shields.io/badge/GitHub-cfneves-181717?style=flat&logo=github)](https://github.com/cfneves)
 [![App](https://img.shields.io/badge/App-quiz--scrum--vfinal-FF4B4B?style=flat&logo=streamlit)](https://quiz-scrum-vfinal-cfn.streamlit.app/)
