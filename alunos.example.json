@@ -1,0 +1,8 @@
+{
+  "alunos": {
+    "professor": "senha_do_professor",
+    "aluno1": "matricula_ou_senha_do_aluno",
+    "aluno2": "matricula_ou_senha_do_aluno",
+    "nome.sobrenome@estudante.sesisenai.org.br": "matricula"
+  }
+}
