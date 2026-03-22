@@ -1,0 +1,371 @@
+================================================================================
+  QUIZ SCRUM — DOCUMENTAÇÃO DE CONTINUIDADE
+  Leia este arquivo antes de qualquer nova sessão de desenvolvimento.
+  Última atualização: 2026-03-22
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. IDENTIDADE DO PROJETO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nome:         Quiz Scrum
+Autor:        Cláudio Ferreira Neves
+Instituição:  SENAI/SC — CentroWEG
+Propósito:    Avaliação de conhecimentos em Scrum para turma de Metodologias
+              Ágeis com Versionamento
+App ao vivo:  https://quiz-scrum-vfinal-cfn.streamlit.app/
+GitHub:       https://github.com/cfneves/quiz-scrum-vfinal.git
+Diretório:    D:\PROJETOS\quiz-scrum-streamlit-main\
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. STACK E DEPENDÊNCIAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Python 3.11+
+Streamlit 1.47.1+
+Pandas 2.3.1+
+Plotly 6.2.0+
+gspread 6.2.1+
+google-auth 2.40.3+
+google-auth-oauthlib 1.2.0+
+
+Instalar: pip install -r requirements.txt
+Rodar:    streamlit run app.py  →  http://localhost:8501
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. ESTRUTURA DE ARQUIVOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+quiz-scrum-streamlit-main/
+│
+├── app.py                    PONTO DE ENTRADA. Roteamento principal com
+│                             session_state. Gerencia 4 rotas:
+│                             - cadastrando=True  → register_ui
+│                             - role=None          → landing_ui
+│                             - role definido, não autenticado → login_ui
+│                             - autenticado=True   → quiz_ui ou professor_ui
+│
+├── config.py                 TODAS AS CONSTANTES. Alterar aqui para mudar
+│                             comportamento global:
+│                             - PONTOS_POR_ACERTO = 0.5 (nota máx = 10.0)
+│                             - NOTA_APROVACAO = 7.0
+│                             - PROFESSOR_USUARIOS = ["claudio", "claudio.neves@..."]
+│                             - SHEETS_NAME = "RespostasAlunos"
+│                             - SESSION_DEFAULTS (estado inicial da sessão)
+│
+├── perguntas.py              20 questões de Scrum com @st.cache_data.
+│                             Estrutura de cada questão:
+│                             {"pergunta": str, "opcoes": [str,...],
+│                              "resposta_correta": int, "explicacao": str}
+│
+├── setup_oauth.py            Script auxiliar para testar OAuth2 local.
+│                             Não é usado pelo app em produção.
+│
+├── services/
+│   ├── auth_service.py       Autenticação com 3 fontes mergeadas:
+│   │                         1. st.secrets["alunos"] (cloud)
+│   │                         2. alunos.json (local)
+│   │                         3. aba "Usuarios" do Sheets (cloud, auto-cadastros)
+│   │                         Login é case-insensitive.
+│   │
+│   ├── register_service.py   Cadastro de novos alunos.
+│   │                         Local → grava em alunos.json
+│   │                         Cloud → grava na aba "Usuarios" do Sheets
+│   │                         Valida: formato e-mail, senha ≥4 chars, duplicidade
+│   │
+│   ├── quiz_service.py       Lógica pura (sem UI):
+│   │                         - verificar_resposta(pergunta, indice) → bool
+│   │                         - calcular_resultado(respostas) → dict
+│   │                         - embaralhar_perguntas(perguntas, seed) → list
+│   │                         Embaralhamento é determinístico por username.
+│   │
+│   ├── storage_service.py    ARMAZENAMENTO PRIMÁRIO em CSV.
+│   │                         Arquivo: data/respostas.csv (gitignored)
+│   │                         Colunas: usuario, questao, resposta, correta, data_hora
+│   │                         ler_resultados(): CSV local → Sheets (fallback cloud)
+│   │                         Mantém só a submissão mais recente por aluno.
+│   │
+│   └── sheets_service.py     Google Sheets (secundário/cloud).
+│                             _get_client(): service account (cloud) ou
+│                                            OAuth2 local (~/.config/gspread/)
+│                             enviar_respostas(): falha em silêncio
+│                             ler_resultados(): cache 60s
+│
+├── components/
+│   ├── styles.py             CSS premium injetado via st.markdown(unsafe_allow_html)
+│   ├── signature.py          Assinatura do autor (rodapé)
+│   ├── landing_ui.py         Tela inicial: cards "Área do Aluno" e "Área do Professor"
+│   │                         + botão "Cadastrar" (abre register_ui)
+│   ├── login_ui.py           Login contextual (muda cor por role: azul=aluno, roxo=prof)
+│   ├── register_ui.py        Cadastro: e-mail, senha, confirmar senha.
+│   │                         Após sucesso: mostra mensagem + botão "Ir para o login"
+│   ├── quiz_ui.py            Quiz com sidebar de progresso. Embaralha na 1ª render.
+│   │                         Fluxo: questão → próxima → confirmação → envio → resultados
+│   ├── results_ui.py         Resultado + gabarito comentado + ranking (gráfico barras)
+│   └── professor_ui.py       Painel do professor: KPIs, gráficos, tabela, CSV download
+│
+├── tests/
+│   ├── conftest.py           Mock do Streamlit para testes (sem browser).
+│   │                         IMPORTANTE: _cache_data_mock suporta @st.cache_data
+│   │                         com e sem argumentos (ex: @st.cache_data(ttl=60)).
+│   ├── test_quiz_service.py  18 testes: verificar_resposta, calcular_resultado,
+│   │                         embaralhar_perguntas
+│   └── test_auth_service.py  8 testes: login válido, senha errada, user inexistente,
+│                             arquivo ausente
+│
+├── data/
+│   └── respostas.csv         Gerado em runtime. NÃO commitado (.gitignore).
+│                             No Streamlit Cloud: efêmero (perdido no restart).
+│                             Por isso o Sheets é o fallback.
+│
+├── .streamlit/
+│   ├── config.toml           Tema dark: primaryColor=#00BFFF, bg=#0a0e1a
+│   └── secrets.toml.example  Modelo de configuração (nunca commitar o real)
+│
+├── alunos.json               NÃO COMMITADO (.gitignore). Existe só localmente.
+│                             Contém professor + alunos da turma atual.
+│                             No cloud é substituído por st.secrets["alunos"].
+│
+├── alunos.example.json       Modelo público do alunos.json
+├── gen-lang-client-*.json    NÃO COMMITADO. JSON da service account do Google.
+├── .gitignore                Protege: alunos.json, *.json service account,
+│                             data/*.csv, .streamlit/secrets.toml, .claude/
+├── requirements.txt          6 dependências em UTF-8 correto (era UTF-16 — corrigido)
+└── LEIA_ANTES_DE_CONTINUAR.txt  Este arquivo
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. FLUXO DE AUTENTICAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Quem pode acessar como ALUNO:
+  - Qualquer usuário em alunos.json (local) ou st.secrets["alunos"] (cloud)
+  - Qualquer usuário que se cadastrou pela tela de cadastro
+    (salvo em alunos.json local, ou aba "Usuarios" do Sheets no cloud)
+
+Quem pode acessar como PROFESSOR:
+  - Deve estar autenticado (como qualquer aluno)
+  - E o username deve constar em PROFESSOR_USUARIOS no config.py:
+      ["claudio", "claudio.neves@edu.sc.senai.br"]
+  - Dupla verificação: auth + lista de autorizados
+
+Credenciais do professor (locais em alunos.json):
+  claudio                          → senha: 60547979215
+  claudio.neves@edu.sc.senai.br    → senha: 3074918
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. GOOGLE SHEETS — CONFIGURAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Planilha: "RespostasAlunos" (Google Sheets)
+Conta de serviço: quiz-scrum-app@gen-lang-client-0099994448.iam.gserviceaccount.com
+Projeto GCP: gen-lang-client-0099994448
+
+A planilha tem (ou terá automaticamente) duas abas:
+  Sheet1    → respostas do quiz (usuario, questao, resposta, correta, data_hora)
+  Usuarios  → alunos auto-cadastrados (email, senha) — criada automaticamente
+
+A service account tem permissão de Editor na planilha.
+JSON da service account: gen-lang-client-0099994448-141e80db12f1.json
+  (existe em D:\PROJETOS\quiz-scrum-streamlit-main\ mas nunca vai pro git)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. STREAMLIT CLOUD — CONFIGURAÇÃO ATUAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+URL: https://quiz-scrum-vfinal-cfn.streamlit.app/
+Repositório conectado: github.com/cfneves/quiz-scrum-vfinal (branch main)
+Arquivo principal: app.py
+
+Secrets configurados no painel do Streamlit Cloud (Settings → Secrets):
+
+  [alunos]
+  "claudio" = "60547979215"
+  "claudio.neves@edu.sc.senai.br" = "3074918"
+  (novos alunos são salvos automaticamente na aba "Usuarios" do Sheets)
+
+  [gcp_service_account]
+  type = "service_account"
+  project_id = "gen-lang-client-0099994448"
+  private_key_id = "141e80db12f16f6e2d7dc0b4a7a3b918eca0520d"
+  private_key = """
+  -----BEGIN PRIVATE KEY-----
+  (chave privada completa — 28 linhas)
+  -----END PRIVATE KEY-----
+  """
+  client_email = "quiz-scrum-app@gen-lang-client-0099994448.iam.gserviceaccount.com"
+  ...
+
+ATENÇÃO: o formato correto para private_key no TOML do Streamlit Cloud é
+aspas triplas """ com quebras de linha reais — NÃO usar \n numa string simples.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. ARMAZENAMENTO EM CAMADAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ESCRITA (ao enviar quiz):
+  1. CSV local (data/respostas.csv)  → sempre tentado primeiro
+  2. Google Sheets Sheet1            → tentado em seguida, falha em silêncio
+
+LEITURA (para ranking e painel professor):
+  1. CSV local                       → se existe e não está vazio
+  2. Google Sheets Sheet1            → fallback automático (cloud sem CSV)
+
+CADASTRO de novo aluno:
+  - Local (alunos.json presente):    grava em alunos.json
+  - Cloud (sem alunos.json):         grava na aba "Usuarios" do Sheets
+
+AUTENTICAÇÃO lê de 3 fontes (mergeadas, base tem prioridade):
+  - st.secrets["alunos"]            (cloud)
+  - alunos.json                     (local)
+  - aba "Usuarios" do Sheets        (cloud, auto-cadastros)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. DECISÕES TÉCNICAS IMPORTANTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. EMBARALHAMENTO DETERMINÍSTICO
+   random.Random(username).shuffle(perguntas)
+   Cada aluno vê sempre a mesma ordem. Ordensdiferentes entre alunos.
+   As perguntas embaralhadas ficam em session_state.perguntas_embaralhadas
+   para que results_ui use a mesma ordem que quiz_ui.
+
+2. SESSION STATE
+   Todas as chaves são inicializadas em SESSION_DEFAULTS (config.py).
+   app.py inicializa no boot:
+     for _k, _v in SESSION_DEFAULTS.items():
+         if _k not in st.session_state: st.session_state[_k] = _v
+   Chaves: autenticado, usuario, role, cadastrando, index,
+           respostas, quiz_finalizado, perguntas_embaralhadas
+
+3. LAYOUT
+   Aluno: colunas [1,2,1] — coluna central de 50% da largura
+   Professor: layout="wide" sem restrição de coluna (usa tela toda)
+   CSS premium em components/styles.py injetado via st.markdown unsafe
+
+4. MOCK DE TESTES
+   conftest.py cria _st_mock que substitui o módulo streamlit nos testes.
+   Suporta @st.cache_data (sem args) e @st.cache_data(ttl=60) (com args).
+   Isso permite testar quiz_service e auth_service sem Streamlit rodando.
+
+5. PROFESSOR: DUPLA VERIFICAÇÃO
+   a) autenticar(username, senha) → verifica senha
+   b) username in PROFESSOR_USUARIOS → verifica autorização
+   Ambos precisam ser True para acessar o painel.
+
+6. SHEETS: FALHA SILENCIOSA
+   sheets_service.enviar_respostas() e ler_resultados() nunca levantam
+   exceção para o usuário — apenas retornam False ou DataFrame vazio.
+   O CSV local é o primário; Sheets é bônus/backup.
+
+7. REQUIREMENTS.TXT
+   Estava corrompido em UTF-16 (espaço entre cada caractere).
+   Foi reescrito em UTF-8 correto. Esse foi o bug que causava
+   "Error installing requirements" no Streamlit Cloud.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. REGRAS DE NEGÓCIO DO QUIZ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- 20 questões sobre Scrum (papéis, eventos, artefatos, valores, DoD)
+- Cada questão tem 4 alternativas, 1 resposta correta e 1 explicação
+- Nota = acertos × 0.5  →  máximo 10.0
+- Aprovado se nota >= 7.0  →  mínimo 14 acertos de 20
+- Ranking: gráfico de barras, aluno atual destacado em azul
+  com medalha 🥇🥈🥉 para os 3 primeiros
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. TESTES AUTOMATIZADOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+26 testes — todos passando (pytest tests/ -v)
+  test_quiz_service.py   18 testes
+  test_auth_service.py    8 testes
+
+Rodar: pytest tests/ -q
+Resultado esperado: 26 passed in 0.06s
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. SEGURANÇA — O QUE NUNCA COMMITAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Protegido pelo .gitignore:
+  alunos.json                  senhas dos usuários
+  gen-lang-client-*.json       chave privada da service account
+  *-service-account*.json      qualquer outro JSON de conta de serviço
+  .streamlit/secrets.toml      secrets locais
+  data/*.csv                   respostas dos alunos
+  .claude/                     memória do assistente AI
+  .venv/, __pycache__/         ambiente virtual e cache Python
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. ESTADO ATUAL — ONDE PARAMOS (2026-03-22)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CONCLUÍDO:
+  [x] Arquitetura em camadas (services/ + components/)
+  [x] Quiz com 20 questões, embaralhamento determinístico por aluno
+  [x] Resultado com nota, gabarito comentado e ranking em gráfico
+  [x] Painel do professor (KPIs, gráficos, tabela, exportação CSV)
+  [x] Tela de cadastro de alunos (e-mail + senha)
+  [x] Sistema de autenticação com 3 fontes (secrets, json, sheets)
+  [x] CSS premium (tema dark, gradientes, cards)
+  [x] Armazenamento CSV local + Google Sheets como fallback
+  [x] Deploy no Streamlit Cloud funcionando
+  [x] Google Sheets configurado com service account
+  [x] secrets.toml configurado no Streamlit Cloud
+  [x] GitHub documentado (README, descrição, tópicos, homepage)
+  [x] 26 testes automatizados passando
+
+POSSÍVEIS PRÓXIMOS PASSOS (não implementados ainda):
+  [ ] Hash de senhas (bcrypt) para maior segurança
+  [ ] Reset de senha por e-mail
+  [ ] Múltiplas turmas / múltiplos quizzes
+  [ ] Timer por questão
+  [ ] Modo revisão (refazer o quiz)
+  [ ] Edição de questões pelo professor via painel
+  [ ] Exportação do painel do professor em PDF
+  [ ] Notificações para o professor quando aluno termina
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13. COMANDOS ÚTEIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rodar o app:
+  streamlit run app.py
+
+Rodar os testes:
+  pytest tests/ -v
+  pytest tests/ -q   (resumido)
+
+Commitar e publicar:
+  git add .
+  git commit -m "mensagem"
+  git push origin main
+  (Streamlit Cloud redeploya automaticamente em ~1 minuto)
+
+Ver status do git:
+  git status
+  git log --oneline -5
+
+Instalar nova dependência:
+  pip install pacote
+  pip freeze > requirements.txt   (CUIDADO: revise antes de commitar)
+  OU adicione manualmente ao requirements.txt
+
+
+================================================================================
+  FIM DO DOCUMENTO
+================================================================================
