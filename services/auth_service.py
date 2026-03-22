@@ -3,8 +3,14 @@ import streamlit as st
 from config import ALUNOS_FILE
 
 
-@st.cache_data
 def _carregar_usuarios() -> dict:
+    # Cloud: use st.secrets["alunos"] when alunos.json is absent (gitignored)
+    try:
+        if "alunos" in st.secrets:
+            return dict(st.secrets["alunos"])
+    except Exception:
+        pass
+
     with open(ALUNOS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)["alunos"]
 

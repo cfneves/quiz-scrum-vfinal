@@ -2,11 +2,28 @@ import gspread
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from google.oauth2.service_account import Credentials
 from config import GSPREAD_CREDENTIALS, GSPREAD_TOKEN, SHEETS_NAME, PONTOS_POR_ACERTO, NOTA_APROVACAO
+
+_SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
 
 
 @st.cache_resource
 def _get_client() -> gspread.Client:
+    # Cloud: use service account from st.secrets
+    try:
+        if "gcp_service_account" in st.secrets:
+            creds = Credentials.from_service_account_info(
+                dict(st.secrets["gcp_service_account"]), scopes=_SCOPES
+            )
+            return gspread.authorize(creds)
+    except Exception:
+        pass
+
+    # Local: use OAuth2 flow (requires browser-based consent once)
     return gspread.oauth(
         credentials_filename=str(GSPREAD_CREDENTIALS),
         authorized_user_filename=str(GSPREAD_TOKEN),
@@ -60,7 +77,5 @@ def ler_resultados() -> pd.DataFrame:
 
         return resumo.sort_values("nota", ascending=False).reset_index(drop=True)
 
-    except FileNotFoundError:
-        return pd.DataFrame()
     except Exception:
         return pd.DataFrame()
