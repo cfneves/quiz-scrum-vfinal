@@ -1,6 +1,11 @@
-"""Armazenamento local em CSV — fonte primária de dados (sem dependências externas)."""
+"""Armazenamento local em CSV — fonte primária de dados (sem dependências externas).
+
+No Streamlit Cloud o sistema de arquivos é efêmero, então ler_resultados()
+usa Google Sheets como fallback quando o CSV está vazio e Sheets está configurado.
+"""
 
 import csv
+import streamlit as st
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
@@ -30,7 +35,19 @@ def salvar_respostas(usuario: str, respostas: list[dict]) -> bool:
 
 
 def ler_resultados() -> pd.DataFrame:
-    """Retorna resultados agregados (última submissão por aluno)."""
+    """Retorna resultados agregados (última submissão por aluno).
+
+    Prioridade: CSV local → Google Sheets (cloud fallback).
+    """
+    df = _ler_csv()
+    if not df.empty:
+        return df
+
+    # Fallback para Sheets quando CSV vazio (Streamlit Cloud)
+    return _ler_sheets_fallback()
+
+
+def _ler_csv() -> pd.DataFrame:
     if not RESPOSTAS_FILE.exists() or RESPOSTAS_FILE.stat().st_size == 0:
         return pd.DataFrame()
 
@@ -38,6 +55,20 @@ def ler_resultados() -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
 
+    return _agregar(df)
+
+
+def _ler_sheets_fallback() -> pd.DataFrame:
+    try:
+        if "gcp_service_account" not in st.secrets:
+            return pd.DataFrame()
+        from services.sheets_service import ler_resultados as sheets_ler
+        return sheets_ler()
+    except Exception:
+        return pd.DataFrame()
+
+
+def _agregar(df: pd.DataFrame) -> pd.DataFrame:
     df["correta_bool"] = df["correta"].str.strip() == "Sim"
     df["data_hora_dt"] = pd.to_datetime(
         df["data_hora"], format="%d/%m/%Y %H:%M:%S", errors="coerce"

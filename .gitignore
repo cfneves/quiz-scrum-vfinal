@@ -3,6 +3,8 @@
 # ============================================================
 credenciais.json
 alunos.json
+gen-lang-client-*.json
+*-service-account*.json
 .env
 *.env
 .streamlit/secrets.toml
