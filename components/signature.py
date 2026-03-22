@@ -5,7 +5,7 @@ from config import APP_AUTHOR, APP_ROLE, APP_ROLE2, APP_ROLE3, APP_INSTITUTION
 def render() -> None:
     st.markdown(f"""
     <hr>
-    <div style="text-align:center; font-size:0.82em; line-height:2; color:#666; padding-bottom:0.5rem;">
+    <div style="text-align:center; font-size:0.82em; line-height:1.4; color:#666; padding-bottom:0.5rem;">
         <span style="color:#00BFFF; font-weight:600; font-size:1em;">🛠️ {APP_AUTHOR}</span><br>
         <span style="color:#888;">{APP_ROLE}</span><br>
         <span style="color:#888;">{APP_ROLE2}</span><br>
