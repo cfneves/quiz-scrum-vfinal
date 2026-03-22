@@ -41,6 +41,9 @@ def render() -> None:
         if st.button("Entrar como Aluno", use_container_width=True, key="btn_aluno"):
             st.session_state.role = "aluno"
             st.rerun()
+        if st.button("📝 Cadastrar", use_container_width=True, key="btn_cadastrar_landing"):
+            st.session_state.cadastrando = True
+            st.rerun()
 
     with col2:
         st.markdown("""

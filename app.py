@@ -1,7 +1,7 @@
 import streamlit as st
 from config import APP_TITLE, APP_ICON, SESSION_DEFAULTS, PROFESSOR_USUARIOS
 from components.styles import PREMIUM_CSS
-from components import landing_ui, login_ui, quiz_ui, professor_ui
+from components import landing_ui, login_ui, quiz_ui, professor_ui, register_ui
 
 st.set_page_config(
     page_title=APP_TITLE,
@@ -19,7 +19,11 @@ for _k, _v in SESSION_DEFAULTS.items():
 # ── Roteamento principal ──────────────────────────────────────────────────────
 
 if not st.session_state.autenticado:
-    if st.session_state.role is None:
+    if st.session_state.get("cadastrando"):
+        _, col, _ = st.columns([1, 2, 1])
+        with col:
+            register_ui.render()
+    elif st.session_state.role is None:
         _, col, _ = st.columns([1, 2, 1])
         with col:
             landing_ui.render()

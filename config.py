@@ -32,6 +32,7 @@ SESSION_DEFAULTS: dict = {
     "autenticado": False,
     "usuario": "",
     "role": None,              # 'aluno' | 'professor'
+    "cadastrando": False,      # True quando tela de cadastro está aberta
     "index": 0,
     "respostas": [],
     "quiz_finalizado": False,
