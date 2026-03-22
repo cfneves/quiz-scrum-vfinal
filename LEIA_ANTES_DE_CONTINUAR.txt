@@ -1,7 +1,7 @@
 ================================================================================
   QUIZ SCRUM — DOCUMENTAÇÃO DE CONTINUIDADE
   Leia este arquivo antes de qualquer nova sessão de desenvolvimento.
-  Última atualização: 2026-03-22
+  Última atualização: 2026-03-22 (v2 — assinatura completa com 3 linhas)
 ================================================================================
 
 
@@ -327,6 +327,10 @@ CONCLUÍDO:
   [x] secrets.toml configurado no Streamlit Cloud
   [x] GitHub documentado (README, descrição, tópicos, homepage)
   [x] 26 testes automatizados passando
+  [x] Assinatura do autor com 3 linhas (config.py: APP_ROLE, APP_ROLE2, APP_ROLE3)
+      Especialista em Business Intelligence, Big Data & Analytics - Ciência de Dados
+      Especialista em Ciência de Dados e Inteligência Artificial
+      MBA em Gestão de Projetos
 
 POSSÍVEIS PRÓXIMOS PASSOS (não implementados ainda):
   [ ] Hash de senhas (bcrypt) para maior segurança
